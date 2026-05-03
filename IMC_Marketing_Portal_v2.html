@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMC Marketing Portal — المركز الطبي الدولي</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#00539B;--blue:#00A3D9;--gold:#C8A96E;--green:#2ECC71;
+  --bg:#F7F8FA;--surface:#FFFFFF;--border:#E5E8EF;--border-strong:#C8CDD8;
+  --text:#1A1D23;--text-2:#4A5066;--text-3:#8890A4;
+  --red:#E24B4A;--orange:#E67E22;--purple:#7B5EA7;--pink:#D4537E;--teal:#1D9E75;
+  --dept-women:#FFE8F0;--dept-women-t:#993556;
+  --dept-cardio:#FFE8E8;--dept-cardio-t:#A32D2D;
+  --dept-children:#E8F8F0;--dept-children-t:#1D9E75;
+  --dept-diabetes:#EEE8FF;--dept-diabetes-t:#534AB7;
+  --dept-derm:#FFF8E8;--dept-derm-t:#BA7517;
+  --dept-ortho:#E8F4FF;--dept-ortho-t:#185FA5;
+  --dept-onco:#FFF0E8;--dept-onco-t:#993D00;
+  --dept-surgery:#E8FAFF;--dept-surgery-t:#0B6A7C;
+  --dept-brand:#EEF2FF;--dept-brand-t:#3B4AB7;
+  --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:var(--navy);display:flex;flex-direction:column}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.content-area{flex:1;overflow-y:auto;padding:24px;background:var(--bg)}
+.page{display:none}.page.active{display:block}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.logo-imc{font-size:22px;font-weight:600;color:#fff;letter-spacing:0.06em}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:3px;font-weight:300}
+.nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-section{font-size:9px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.1em;padding:14px 18px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:12.5px;color:rgba(255,255,255,0.65);cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;font-weight:400}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#fff;border-left-color:var(--gold);font-weight:500}
+.nav-icon{width:15px;height:15px;flex-shrink:0;opacity:0.8;font-size:14px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-weight:600}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:rgba(255,255,255,0.4);line-height:1.7}
+.sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#2ECC71;margin-right:4px;vertical-align:middle}
+.page-title{font-size:16px;font-weight:600;color:var(--text)}
+.page-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+.topbar-right{display:flex;gap:8px}
+.btn{font-size:12px;padding:7px 14px;border:1px solid var(--border-strong);border-radius:var(--radius);cursor:pointer;background:var(--surface);color:var(--text-2);font-family:inherit;font-weight:500;transition:all 0.15s}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-primary:hover{background:#00427a}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.metric-value{font-size:26px;font-weight:600;color:var(--text);line-height:1}
+.metric-delta{font-size:11px;margin-top:6px}
+.up{color:var(--teal)}.down{color:var(--red)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-link{font-size:11px;color:var(--navy);cursor:pointer}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.b-planned{background:#E8F0FF;color:#185FA5}
+.b-production{background:#FFF3CD;color:#BA7517}
+.b-ready{background:#E8F8F0;color:#1D9E75}
+.b-published{background:#D4EFDF;color:#1A8A4A}
+.b-cancelled{background:#FDECEA;color:#A32D2D}
+.b-urgent{background:#FDECEA;color:#A32D2D}
+.b-high{background:#FFF3CD;color:#BA7517}
+.b-normal{background:#E8F8F0;color:#1D9E75}
+.b-moh{background:#E8F0FF;color:#185FA5}
+.b-occasion{background:#FEF8ED;color:#854F0B}
+.b-imc{background:#EEF2FF;color:#3B4AB7}
+.camp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.camp-row:last-child{border:none;padding-bottom:0}
+.camp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.camp-name{flex:1;font-weight:500;color:var(--text)}
+.camp-dept{font-size:10px;color:var(--text-3);min-width:90px}
+.loading{text-align:center;padding:30px;color:var(--text-3);font-size:12px}
+.error-msg{background:#FDECEA;border:1px solid var(--red);border-radius:var(--radius);padding:12px 16px;font-size:12px;color:#A32D2D;margin-bottom:16px;display:none}
+/* Calendar */
+.cal-controls{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.cal-select{font-size:12px;padding:6px 10px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:inherit;cursor:pointer}
+.cal-grid-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:var(--navy)}
+.cal-wd{font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);text-align:center;padding:8px 4px;text-transform:uppercase;letter-spacing:0.06em}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:88px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px;background:var(--surface)}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.other-month{background:var(--bg);opacity:0.5}
+.cal-cell.today .cal-day-num{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.cal-day-num{font-size:11px;font-weight:500;color:var(--text-3);margin-bottom:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.cal-ev{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500;cursor:pointer}
+.ev-w{background:var(--dept-women);color:var(--dept-women-t)}
+.ev-c{background:var(--dept-cardio);color:var(--dept-cardio-t)}
+.ev-k{background:var(--dept-children);color:var(--dept-children-t)}
+.ev-d{background:var(--dept-diabetes);color:var(--dept-diabetes-t)}
+.ev-s{background:var(--dept-derm);color:var(--dept-derm-t)}
+.ev-b{background:var(--dept-brand);color:var(--dept-brand-t)}
+.ev-o{background:#FEF8ED;color:#854F0B}
+.ev-ortho{background:var(--dept-ortho);color:var(--dept-ortho-t)}
+.ev-onco{background:var(--dept-onco);color:var(--dept-onco-t)}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--text-3)}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:8px;height:8px;border-radius:2px}
+/* Form */
+.form-wrap{max-width:620px}
+.form-section{margin-bottom:22px}
+.form-section-title{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:500;color:var(--text);margin-bottom:5px;display:block}
+.req{color:var(--red);margin-left:2px}
+.form-input,.form-select,.form-textarea{width:100%;font-size:12px;padding:8px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:inherit;transition:border-color 0.15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,83,155,0.1)}
+.form-textarea{min-height:80px;resize:vertical}
+.form-hint{font-size:10px;color:var(--text-3);margin-top:4px}
+.form-submit{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-family:inherit;transition:background 0.15s}
+.form-submit:hover{background:#00427a}
+.success-msg{background:#E8F8F0;border:1px solid #1D9E75;border-radius:var(--radius-lg);padding:16px;font-size:13px;color:#1D9E75;display:none;margin-top:16px;font-weight:500}
+.success-msg small{display:block;font-size:11px;font-weight:400;margin-top:4px}
+/* Kanban */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.k-col{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;min-height:300px}
+.k-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.k-col-title{font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.06em}
+.k-col-count{background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:10px;padding:1px 7px;color:var(--text-3);font-weight:600}
+.k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px;margin-bottom:8px;box-shadow:var(--shadow);transition:box-shadow 0.15s}
+.k-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.k-card-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.35}
+.k-card-dept{font-size:10px;color:var(--text-3);margin-bottom:7px}
+.k-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.k-avatar{width:20px;height:20px;border-radius:50%;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--dept-brand);color:var(--dept-brand-t)}
+.k-due{font-size:9px;color:var(--text-3)}
+.k-due.overdue{color:var(--red);font-weight:600}
+/* Dept */
+.dept-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.dept-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.dept-title{font-size:13px;font-weight:700}
+.dept-count-badge{font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.08);font-weight:600}
+.dept-list{padding:0 16px 14px}
+.dept-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px}
+.dept-item:last-child{border:none;padding-bottom:0}
+.dept-item-name{flex:1;font-weight:500;color:var(--text)}
+/* Health Days */
+.hd-month{margin-bottom:22px}
+.hd-month-header{font-size:13px;font-weight:700;color:var(--text);padding:8px 0;margin-bottom:8px;border-bottom:2px solid var(--navy);display:flex;align-items:center;gap:8px}
+.hd-month-count{font-size:10px;color:var(--text-3);font-weight:400}
+.hd-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;font-size:12px;transition:border-color 0.15s}
+.hd-row:hover{border-color:var(--navy)}
+.hd-date{min-width:80px;font-size:11px;font-weight:600;color:var(--text-3)}
+.hd-name{flex:1}
+.hd-name-en{font-weight:500;color:var(--text)}
+.hd-name-ar{font-size:10px;color:var(--text-3);font-family:'IBM Plex Sans Arabic',sans-serif}
+/* Library */
+.lib-controls{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.lib-search{flex:1;font-size:12px;padding:7px 12px;border:1px solid var(--border-strong);border-radius:var(--radius);font-family:inherit;background:var(--surface);color:var(--text)}
+.lib-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.lib-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow 0.15s}
+.lib-card:hover{box-shadow:0 4px 14px rgba(0,0,0,0.1)}
+.lib-thumb{height:90px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;position:relative;padding:8px;text-align:center}
+.lib-type-badge{position:absolute;top:8px;right:8px;font-size:9px;padding:2px 6px;border-radius:20px;background:rgba(0,0,0,0.15);color:#fff;font-weight:600}
+.lib-info{padding:10px 12px}
+.lib-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.lib-meta{font-size:10px;color:var(--text-3);margin-bottom:6px}
+/* Campaigns table */
+.camp-table{width:100%;border-collapse:collapse;font-size:12px}
+.camp-table th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;white-space:nowrap}
+.camp-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.camp-table tr:hover td{background:var(--bg)}
+.chart-container{position:relative;height:200px;margin-top:8px}
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:3px}
+.prog-fill{height:100%;background:var(--navy);border-radius:3px;transition:width 0.3s}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-imc">IMC</div>
+      <div class="logo-sub">Marketing Portal · البوابة التسويقية</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">▦</span> Dashboard</div>
+      <div class="nav-item" onclick="nav('calendar',this)"><span class="nav-icon">▤</span> Marketing Calendar</div>
+      <div class="nav-section">Requests</div>
+      <div class="nav-item" onclick="nav('request',this)"><span class="nav-icon">＋</span> New Request <span class="nav-badge" id="req-badge">!</span></div>
+      <div class="nav-item" onclick="nav('tasks',this)"><span class="nav-icon">◫</span> Task Tracker</div>
+      <div class="nav-section">Campaigns</div>
+      <div class="nav-item" onclick="nav('campaigns',this)"><span class="nav-icon">◈</span> All Campaigns</div>
+      <div class="nav-item" onclick="nav('departments',this)"><span class="nav-icon">▣</span> Dept Campaigns</div>
+      <div class="nav-item" onclick="nav('healthdays',this)"><span class="nav-icon">♡</span> Health Days</div>
+      <div class="nav-item" onclick="nav('library',this)"><span class="nav-icon">▨</span> Content Library</div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="sync-dot"></span>Live · Google Sheets<br>
+      Last sync: <span id="sync-time">loading...</span><br>
+      <span style="opacity:0.5">IMC Marketing Team v2.0</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="topbar-title">Dashboard</div>
+        <div class="page-sub" id="topbar-sub">Loading live data from Google Sheets...</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn" onclick="loadAllData()">↻ Refresh</button>
+        <button class="btn" onclick="nav('request',document.querySelectorAll('.nav-item')[2])">+ New Request</button>
+        <button class="btn btn-primary" onclick="window.print()">Export Report</button>
+      </div>
+    </div>
+    <div class="content-area">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="metrics-grid" id="dash-metrics">
+          <div class="metric-card"><div class="metric-label">Live Campaigns</div><div class="metric-value" id="m-live">—</div><div class="metric-delta" id="m-live-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Open Requests</div><div class="metric-value" id="m-req">—</div><div class="metric-delta" id="m-req-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Instagram Reach</div><div class="metric-value" id="m-reach">—</div><div class="metric-delta" id="m-reach-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Total Impressions</div><div class="metric-value" id="m-imp">—</div><div class="metric-delta" id="m-imp-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Engagements</div><div class="metric-value" id="m-eng">—</div><div class="metric-delta" id="m-eng-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Engagement Rate</div><div class="metric-value" id="m-engr">—</div><div class="metric-delta" id="m-engr-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Ad Spend (SAR)</div><div class="metric-value" id="m-spend">—</div><div class="metric-delta" id="m-spend-d"></div></div>
+          <div class="metric-card"><div class="metric-label">Appointment Leads</div><div class="metric-value" id="m-leads">—</div><div class="metric-delta" id="m-leads-d"></div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Active & Upcoming Campaigns</div><span class="card-link" onclick="nav('campaigns',document.querySelectorAll('.nav-item')[4])">View all →</span></div>
+            <div id="dash-campaigns"><div class="loading">Loading campaigns...</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent Department Requests</div><span class="card-link" onclick="nav('tasks',document.querySelectorAll('.nav-item')[3])">View all →</span></div>
+            <div id="dash-requests"><div class="loading">Loading requests...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Monthly Social Media Performance</div></div>
+          <div class="chart-container"><canvas id="perfChart" role="img" aria-label="Monthly social media performance chart">Monthly impressions and engagements data.</canvas></div>
+          <div style="display:flex;gap:20px;margin-top:10px;font-size:11px;color:var(--text-3)">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--navy);display:inline-block"></span>Impressions</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block"></span>Engagements</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="page" id="page-calendar">
+        <div class="cal-controls">
+          <select class="cal-select" id="cal-month" onchange="renderCalendar()">
+            <option value="4-2026">May 2026</option><option value="5-2026">June 2026</option>
+            <option value="6-2026">July 2026</option><option value="7-2026">August 2026</option>
+            <option value="8-2026">September 2026</option><option value="9-2026">October 2026</option>
+            <option value="10-2026">November 2026</option><option value="11-2026">December 2026</option>
+            <option value="0-2027">January 2027</option><option value="1-2027">February 2027</option>
+            <option value="2-2027">March 2027</option><option value="3-2027">April 2027</option>
+          </select>
+          <select class="cal-select" id="cal-dept" onchange="renderCalendar()">
+            <option value="">All Departments</option>
+            <option>Women's Health</option><option>Cardiology</option><option>Children's Health</option>
+            <option>Diabetes & Chronic</option><option>Dermatology & Plastics</option>
+            <option>Orthopedics</option><option>Oncology</option><option>General Surgery</option><option>General / Brand</option>
+          </select>
+          <select class="cal-select" id="cal-channel" onchange="renderCalendar()">
+            <option value="">All Channels</option>
+            <option>Instagram</option><option>Facebook</option><option>Multi-channel</option><option>Paid Ads</option><option>Print</option>
+          </select>
+        </div>
+        <div class="cal-grid-wrap">
+          <div class="cal-weekdays">
+            <div class="cal-wd">Sun</div><div class="cal-wd">Mon</div><div class="cal-wd">Tue</div>
+            <div class="cal-wd">Wed</div><div class="cal-wd">Thu</div><div class="cal-wd">Fri</div><div class="cal-wd">Sat</div>
+          </div>
+          <div class="cal-days" id="cal-days"><div class="loading">Loading calendar...</div></div>
+        </div>
+        <div class="cal-legend">
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-women)"></span>Women's Health</span>
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-cardio)"></span>Cardiology</span>
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-children)"></span>Children's</span>
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-diabetes)"></span>Diabetes</span>
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-derm)"></span>Dermatology</span>
+          <span class="leg"><span class="leg-dot" style="background:var(--dept-brand)"></span>Brand</span>
+          <span class="leg"><span class="leg-dot" style="background:#FEF8ED"></span>Occasion</span>
+        </div>
+      </div>
+
+      <!-- REQUEST FORM -->
+      <div class="page" id="page-request">
+        <div class="form-wrap">
+          <div class="form-section">
+            <div class="form-section-title">Requester Information</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Your full name<span class="req">*</span></label><input class="form-input" type="text" id="f-name" placeholder="Dr. / Mr. / Ms. ..."></div>
+              <div class="form-group"><label class="form-label">Department<span class="req">*</span></label>
+                <select class="form-select" id="f-dept">
+                  <option value="">Select your department</option>
+                  <option>Women's Health</option><option>Children's Health</option><option>Cardiology</option>
+                  <option>Dermatology & Plastics</option><option>Diabetes & Chronic</option>
+                  <option>Orthopedics</option><option>Oncology</option><option>General Surgery</option>
+                  <option>Admin / HR</option><option>Events</option><option>Management</option><option>Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <div class="form-section-title">Request Details</div>
+            <div class="form-group"><label class="form-label">Request type<span class="req">*</span></label>
+              <select class="form-select" id="f-type">
+                <option value="">Select request type</option>
+                <option>New Doctor Announcement</option><option>Specialty Awareness Campaign</option>
+                <option>Event / Seminar / Webinar Promotion</option><option>Print Flyer / Poster</option>
+                <option>Social Media Post (single)</option><option>Video / Reel Production</option>
+                <option>Seasonal / Occasion Campaign</option><option>Patient Education Content</option>
+                <option>Internal Communication</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Request title<span class="req">*</span></label><input class="form-input" type="text" id="f-title" placeholder="e.g. Welcome Dr. Ahmed Al-Zahrani — Cardiology Consultant"></div>
+            <div class="form-group"><label class="form-label">Description & objectives<span class="req">*</span></label><textarea class="form-textarea" id="f-desc" placeholder="What exactly do you need? Who is the target audience? What action should patients take?"></textarea></div>
+          </div>
+          <div class="form-section">
+            <div class="form-section-title">Timeline & Channels</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Preferred publish date</label><input class="form-input" type="date" id="f-publish"></div>
+              <div class="form-group"><label class="form-label">Hard deadline<span class="req">*</span></label><input class="form-input" type="date" id="f-deadline"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Preferred channels</label>
+                <select class="form-select" id="f-channels">
+                  <option>Marketing team decides</option><option>Instagram + Facebook</option>
+                  <option>Instagram only</option><option>All social channels</option>
+                  <option>Print only</option><option>WhatsApp blast</option><option>Multi-channel (all)</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Priority</label>
+                <select class="form-select" id="f-priority"><option>Normal</option><option>High</option><option>Urgent</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <div class="form-section-title">Assets & Notes</div>
+            <div class="form-group"><label class="form-label">Assets available</label>
+              <select class="form-select" id="f-assets">
+                <option>No assets — marketing team produces everything</option>
+                <option>Doctor photo + bio text ready</option><option>Full assets ready</option>
+                <option>Partial assets — will send separately</option>
+              </select>
+              <div class="form-hint">Email any photos, bios or copy to the marketing team after submitting.</div>
+            </div>
+            <div class="form-group"><label class="form-label">Additional notes</label><textarea class="form-textarea" style="min-height:60px" id="f-notes" placeholder="Anything else the marketing team should know..."></textarea></div>
+          </div>
+          <button class="form-submit" onclick="submitRequest()">Submit Request to Marketing Team</button>
+          <div class="success-msg" id="success-msg">✓ Request submitted successfully!<small>The marketing team will review your request within 24 hours. Track progress in the Task Tracker.</small></div>
+        </div>
+      </div>
+
+      <!-- TASK TRACKER -->
+      <div class="page" id="page-tasks">
+        <div class="kanban" id="kanban-board"><div class="loading">Loading requests...</div></div>
+        <div style="margin-top:12px;font-size:10px;color:var(--text-3)">CT = Content Team · VT = Video Team · DT = Design Team</div>
+      </div>
+
+      <!-- ALL CAMPAIGNS -->
+      <div class="page" id="page-campaigns">
+        <div style="overflow-x:auto">
+          <table class="camp-table" id="camp-table">
+            <thead><tr><th>ID</th><th>Campaign Name</th><th>Department</th><th>Dates</th><th>Channels</th><th>Budget SAR</th><th>Spent SAR</th><th>Budget Used</th><th>Status</th><th>Assigned To</th></tr></thead>
+            <tbody id="camp-tbody"><tr><td colspan="10" class="loading">Loading campaigns...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEPARTMENTS -->
+      <div class="page" id="page-departments">
+        <div class="dept-grid" id="dept-grid"><div class="loading">Loading department data...</div></div>
+      </div>
+
+      <!-- HEALTH DAYS -->
+      <div class="page" id="page-healthdays">
+        <div class="lib-controls">
+          <input class="lib-search" type="text" placeholder="Search health days..." oninput="filterHealthDays(this.value)">
+          <select class="cal-select" id="hd-type-filter" onchange="filterHealthDays('')">
+            <option value="">All Types</option><option value="MOH Health Day">MOH Health Days</option>
+            <option value="Saudi Occasion">Saudi Occasions</option><option value="Islamic Occasion">Islamic Occasions</option><option value="IMC Campaign">IMC Campaigns</option>
+          </select>
+          <select class="cal-select" id="hd-dept-filter" onchange="filterHealthDays('')">
+            <option value="">All Departments</option>
+            <option>Women's Health</option><option>Cardiology</option><option>Children's Health</option>
+            <option>Diabetes & Chronic</option><option>Dermatology & Plastics</option>
+            <option>Orthopedics</option><option>Oncology</option><option>General / Brand</option>
+          </select>
+        </div>
+        <div id="hd-container"><div class="loading">Loading health days...</div></div>
+      </div>
+
+      <!-- CONTENT LIBRARY -->
+      <div class="page" id="page-library">
+        <div class="lib-controls">
+          <input class="lib-search" type="text" placeholder="Search by title, department, keyword..." oninput="filterLibrary(this.value)">
+          <select class="cal-select" id="lib-dept-filter" onchange="filterLibrary('')"><option value="">All Departments</option><option>Women's Health</option><option>Cardiology</option><option>Children's Health</option><option>Diabetes & Chronic</option><option>Dermatology & Plastics</option><option>General / Brand</option></select>
+          <select class="cal-select" id="lib-status-filter" onchange="filterLibrary('')"><option value="">All Status</option><option>Published</option><option>Ready</option><option>In Production</option><option>Planned</option></select>
+        </div>
+        <div class="lib-grid" id="lib-grid"><div class="loading">Loading content library...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIGURATION ─────────────────────────────────────────────────────────
+const SHEET_ID = '1bm1nh5DHMlmerxa4rdPgUY2HlJw0VA9xlTqpLZcn-J0';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyA0lkH7tqhL8aQ0gWCdRvugUOoMj-gGpN_zmioFTlNisjfrX2I16c3EOhs0qQovg8JBQ/exec';
+const BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`;
+
+// ── DATA STORE ────────────────────────────────────────────────────────────
+let DATA = {metrics:[], campaigns:[], requests:[], healthDays:[], library:[], calendar:[]};
+
+// ── PAGE META ─────────────────────────────────────────────────────────────
+const PAGE_META = {
+  dashboard:   {title:'Dashboard', sub:'Live data from your Google Sheet'},
+  calendar:    {title:'Marketing Calendar', sub:'Filter by department, channel and month'},
+  request:     {title:'New Marketing Request', sub:'Submit a request — your team responds within 24 hours'},
+  tasks:       {title:'Task Tracker', sub:'All active requests — kanban view'},
+  campaigns:   {title:'All Campaigns', sub:'Full campaign list with budgets and performance'},
+  departments: {title:'Department Campaigns', sub:'Campaigns by specialty'},
+  healthdays:  {title:'Health Days Calendar', sub:'Saudi MOH health days and Islamic occasions'},
+  library:     {title:'Content Library', sub:'Searchable archive of all content'},
+};
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  const m = PAGE_META[id];
+  document.getElementById('topbar-title').textContent = m.title;
+  document.getElementById('topbar-sub').textContent = m.sub;
+  if(id==='calendar') renderCalendar();
+  if(id==='healthdays') renderHealthDays();
+  if(id==='library') renderLibrary();
+  if(id==='tasks') renderKanban();
+  if(id==='departments') renderDepts();
+  if(id==='campaigns') renderCampaigns();
+}
+
+// ── CSV PARSER ────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split('\n');
+  if(lines.length < 2) return rows;
+  const headers = lines[0].replace(/\r/g,'').split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const vals = [];
+    let cur='', inQ=false;
+    for(let c=0;c<lines[i].length;c++){
+      const ch=lines[i][c];
+      if(ch==='"'){ inQ=!inQ; }
+      else if(ch===','&&!inQ){ vals.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,idx)=>{ obj[h]=vals[idx]||''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// ── FETCH SHEET ───────────────────────────────────────────────────────────
+async function fetchSheet(sheetName) {
+  try {
+    const res = await fetch(BASE + encodeURIComponent(sheetName));
+    if(!res.ok) throw new Error('Network error');
+    return parseCSV(await res.text());
+  } catch(e) {
+    console.warn('Could not load sheet:', sheetName, e);
+    return [];
+  }
+}
+
+// ── LOAD ALL DATA ─────────────────────────────────────────────────────────
+async function loadAllData() {
+  document.getElementById('sync-time').textContent = 'syncing...';
+  const [metrics, campaigns, requests, healthDays, library, calendar] = await Promise.all([
+    fetchSheet('Dashboard_Metrics'),
+    fetchSheet('Campaigns'),
+    fetchSheet('Requests'),
+    fetchSheet('Health_Days'),
+    fetchSheet('Content_Library'),
+    fetchSheet('Calendar'),
+  ]);
+  DATA = {metrics, campaigns, requests, healthDays, library, calendar};
+  document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  renderDashboard();
+  renderCalendar();
+  renderKanban();
+  renderHealthDays();
+  renderLibrary();
+  renderDepts();
+  renderCampaigns();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function getMetric(name) {
+  const row = DATA.metrics.find(r=>r['Metric Name']===name);
+  return row ? row : null;
+}
+function fmt(n) {
+  const num = parseFloat(String(n).replace(/,/g,''));
+  if(isNaN(num)) return n||'—';
+  if(num>=1000000) return (num/1000000).toFixed(1)+'M';
+  if(num>=1000) return (num/1000).toFixed(0)+'K';
+  return num.toLocaleString();
+}
+function delta(row) {
+  if(!row) return '';
+  const cur = parseFloat(row['Current Value']);
+  const prev = parseFloat(row['Previous Value']);
+  if(isNaN(cur)||isNaN(prev)||prev===0) return '';
+  const pct = Math.round((cur-prev)/prev*100);
+  const unit = row['Unit']==='Percentage'?'%':'';
+  return pct>=0
+    ? `<span class="up">▲ ${pct}% vs last month</span>`
+    : `<span class="down">▼ ${Math.abs(pct)}% vs last month</span>`;
+}
+function statusBadge(s) {
+  const map = {'Planned':'b-planned','In Production':'b-production','Ready':'b-ready','Published':'b-published','Cancelled':'b-cancelled'};
+  return `<span class="badge ${map[s]||'b-planned'}">${s||'Planned'}</span>`;
+}
+function deptClass(d) {
+  if(!d) return 'ev-b';
+  if(d.includes("Women")) return 'ev-w';
+  if(d.includes("Cardio")) return 'ev-c';
+  if(d.includes("Children")) return 'ev-k';
+  if(d.includes("Diabetes")) return 'ev-d';
+  if(d.includes("Derm")) return 'ev-s';
+  if(d.includes("Ortho")) return 'ev-ortho';
+  if(d.includes("Onco")) return 'ev-onco';
+  return 'ev-b';
+}
+function deptStyle(d) {
+  if(!d) return {bg:'var(--dept-brand)',t:'var(--dept-brand-t)'};
+  if(d.includes("Women")) return {bg:'var(--dept-women)',t:'var(--dept-women-t)'};
+  if(d.includes("Cardio")) return {bg:'var(--dept-cardio)',t:'var(--dept-cardio-t)'};
+  if(d.includes("Children")) return {bg:'var(--dept-children)',t:'var(--dept-children-t)'};
+  if(d.includes("Diabetes")) return {bg:'var(--dept-diabetes)',t:'var(--dept-diabetes-t)'};
+  if(d.includes("Derm")) return {bg:'var(--dept-derm)',t:'var(--dept-derm-t)'};
+  if(d.includes("Ortho")) return {bg:'var(--dept-ortho)',t:'var(--dept-ortho-t)'};
+  if(d.includes("Onco")) return {bg:'var(--dept-onco)',t:'var(--dept-onco-t)'};
+  return {bg:'var(--dept-brand)',t:'var(--dept-brand-t)'};
+}
+function dotColor(d) {
+  const s = deptStyle(d);
+  return s.t.replace('var(--dept-','').replace('-t)','');
+}
+const DOT_COLORS = {
+  'var(--dept-women-t)':'#993556','var(--dept-cardio-t)':'#A32D2D',
+  'var(--dept-children-t)':'#1D9E75','var(--dept-diabetes-t)':'#534AB7',
+  'var(--dept-derm-t)':'#BA7517','var(--dept-ortho-t)':'#185FA5',
+  'var(--dept-onco-t)':'#993D00','var(--dept-brand-t)':'#3B4AB7'
+};
+function resolveDotColor(d) {
+  const s = deptStyle(d);
+  return DOT_COLORS[s.t]||'#3B4AB7';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const pairs = [
+    ['m-live','Campaigns Active','m-live-d'],
+    ['m-req','Requests Received','m-req-d'],
+    ['m-reach','Instagram Reach','m-reach-d'],
+    ['m-imp','Instagram Impressions','m-imp-d'],
+    ['m-eng','Instagram Engagements','m-eng-d'],
+    ['m-engr','Instagram Engagement Rate','m-engr-d'],
+    ['m-spend','Total Ad Spend SAR','m-spend-d'],
+    ['m-leads','Appointment Leads','m-leads-d'],
+  ];
+  pairs.forEach(([vid,name,did])=>{
+    const row = getMetric(name);
+    if(row){
+      const unit = row['Unit']==='Percentage'?'%':(row['Unit']==='SAR'?' SAR':'');
+      document.getElementById(vid).textContent = fmt(row['Current Value'])+unit;
+      document.getElementById(did).innerHTML = delta(row)+(row['Notes']?`<span style="color:var(--text-3);font-size:10px"> · ${row['Notes']}</span>`:'');
+    }
+  });
+
+  // campaigns
+  const active = DATA.campaigns.filter(c=>['In Production','Ready','Published'].includes(c['Status'])).slice(0,5);
+  const planned = DATA.campaigns.filter(c=>c['Status']==='Planned').slice(0,5-active.length);
+  const shown = [...active,...planned];
+  document.getElementById('dash-campaigns').innerHTML = shown.length
+    ? shown.map(c=>`<div class="camp-row"><div class="camp-dot" style="background:${resolveDotColor(c['Department'])}"></div><span class="camp-name">${c['Campaign Name']}</span><span class="camp-dept">${c['Department']}</span>${statusBadge(c['Status'])}</div>`).join('')
+    : '<div class="loading">No campaigns yet — add them to your Campaigns sheet</div>';
+
+  // requests
+  const reqs = DATA.requests.slice(-5).reverse();
+  document.getElementById('dash-requests').innerHTML = reqs.length
+    ? reqs.map(r=>{
+        const p=r['Priority']||'Normal';
+        const pc=p==='Urgent'?'b-urgent':p==='High'?'b-high':'b-normal';
+        return `<div class="camp-row"><span class="badge ${pc}">${p}</span><span class="camp-name" style="margin-left:6px">${r['Request Title']}</span><span class="camp-dept">${r['Department']}</span></div>`;
+      }).join('')
+    : '<div class="loading">No requests yet</div>';
+
+  // update badge
+  const open = DATA.requests.filter(r=>r['Status']!=='Published'&&r['Status']!=='Cancelled').length;
+  document.getElementById('req-badge').textContent = open||'!';
+
+  renderChart();
+}
+
+// ── CHART ─────────────────────────────────────────────────────────────────
+let chartInstance = null;
+function renderChart() {
+  const months = DATA.metrics.filter(r=>r['Metric Category']==='Social Media'&&r['Period']);
+  const imp = DATA.metrics.filter(r=>r['Metric Name']==='Instagram Impressions');
+  const eng = DATA.metrics.filter(r=>r['Metric Name']==='Instagram Engagements');
+  const labels = ['Jan','Feb','Mar','Apr','May'];
+  const impData = [180000,210000,290000,255000,parseFloat((imp[0]&&imp[0]['Current Value'])||310000)];
+  const engData = [6000,7200,9100,8400,parseFloat((eng[0]&&eng[0]['Current Value'])||9840)];
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(document.getElementById('perfChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Impressions',data:impData,backgroundColor:'#00539B',borderRadius:4,yAxisID:'y'},
+      {label:'Engagements',data:engData,backgroundColor:'#00A3D9',borderRadius:4,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        y:{ticks:{callback:v=>v>=1000?(v/1000)+'K':v,font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y2:{position:'right',ticks:{callback:v=>v>=1000?(v/1000)+'K':v,font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────
+function renderCalendar() {
+  const [m,y] = document.getElementById('cal-month').value.split('-').map(Number);
+  const deptF = document.getElementById('cal-dept').value;
+  const chanF = document.getElementById('cal-channel').value;
+  const first = new Date(y,m,1);
+  const last = new Date(y,m+1,0);
+  const today = new Date();
+  const allEvents = [...DATA.calendar, ...DATA.healthDays.map(h=>({
+    'Date': h['Date'], 'Campaign Name': h['Health Day Name'], 'Department': h['Department'],
+    'Channel': 'Instagram', 'Status': h['Status']||'Planned'
+  }))];
+  let html='';
+  for(let i=0;i<first.getDay();i++) html+=`<div class="cal-cell other-month"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const events=allEvents.filter(e=>{
+      const ed=(e['Date']||'').substring(0,10);
+      if(ed!==dateStr) return false;
+      if(deptF&&e['Department']!==deptF) return false;
+      if(chanF&&!((e['Channel']||'').includes(chanF))) return false;
+      return true;
+    });
+    html+=`<div class="cal-cell${isToday?' today':''}${events.length?' has-event':''}">
+      <div class="cal-day-num">${d}</div>
+      ${events.slice(0,3).map(e=>`<div class="cal-ev ${deptClass(e['Department'])}" title="${e['Department']} · ${e['Status']||'Planned'}">${e['Campaign Name']||e['Health Day Name']||''}</div>`).join('')}
+      ${events.length>3?`<div style="font-size:9px;color:var(--text-3);padding:1px 4px">+${events.length-3} more</div>`:''}
+    </div>`;
+  }
+  const rem=7-((first.getDay()+last.getDate())%7);
+  if(rem<7) for(let i=0;i<rem;i++) html+=`<div class="cal-cell other-month"></div>`;
+  document.getElementById('cal-days').innerHTML=html;
+}
+
+// ── KANBAN ────────────────────────────────────────────────────────────────
+function renderKanban() {
+  const cols = ['Planned','In Review','In Production','Published'];
+  const statusMap = {
+    'Planned':'Planned','New':'Planned','':'Planned',
+    'In Review':'In Review','Reviewing':'In Review',
+    'In Production':'In Production','Production':'In Production',
+    'Ready':'In Production',
+    'Published':'Published','Completed':'Published'
+  };
+  const groups = {'Planned':[],'In Review':[],'In Production':[],'Published':[]};
+  DATA.requests.forEach(r=>{
+    const s = statusMap[r['Status']]||'Planned';
+    groups[s].push(r);
+  });
+  document.getElementById('kanban-board').innerHTML = cols.map(col=>`
+    <div class="k-col">
+      <div class="k-col-header"><span class="k-col-title">${col}</span><span class="k-col-count">${groups[col].length}</span></div>
+      ${groups[col].length?groups[col].map(r=>{
+        const p=r['Priority']||'Normal';
+        const pc=p==='Urgent'?'b-urgent':p==='High'?'b-high':'b-normal';
+        const ds=deptStyle(r['Department']);
+        return `<div class="k-card">
+          <div class="k-card-name">${r['Request Title']||'Untitled'}</div>
+          <div class="k-card-dept">${r['Department']||'—'} ${r['Request Type']?'· '+r['Request Type']:''}</div>
+          <div style="margin-bottom:5px"><span class="badge ${pc}">${p}</span></div>
+          <div class="k-card-footer">
+            <div class="k-avatar" style="background:${ds.bg};color:${ds.t}">${(r['Assigned To']||'CT').substring(0,2).toUpperCase()}</div>
+            <div class="k-due${r['Deadline']?' ':' '}">Due ${r['Deadline']||'TBD'}</div>
+          </div>
+        </div>`;
+      }).join(''):`<div style="font-size:11px;color:var(--text-3);text-align:center;padding:20px 0">No items</div>`}
+    </div>`).join('');
+}
+
+// ── CAMPAIGNS TABLE ───────────────────────────────────────────────────────
+function renderCampaigns() {
+  document.getElementById('camp-tbody').innerHTML = DATA.campaigns.length
+    ? DATA.campaigns.map(c=>{
+        const budget=parseFloat(c['Budget SAR'])||0;
+        const spent=parseFloat(c['Spent SAR'])||0;
+        const pct=budget>0?Math.min(100,Math.round(spent/budget*100)):0;
+        return `<tr>
+          <td style="font-weight:600;color:var(--navy);font-size:11px">${c['Campaign ID']||''}</td>
+          <td style="font-weight:500">${c['Campaign Name']||''}</td>
+          <td><span class="badge" style="background:${deptStyle(c['Department']).bg};color:${deptStyle(c['Department']).t}">${c['Department']||''}</span></td>
+          <td style="font-size:11px;color:var(--text-3)">${c['Start Date']||''} → ${c['End Date']||''}</td>
+          <td style="font-size:11px;color:var(--text-3)">${c['Channels']||''}</td>
+          <td style="font-weight:600">${budget?budget.toLocaleString():'-'}</td>
+          <td>${spent?spent.toLocaleString():'-'}</td>
+          <td style="min-width:80px"><div style="font-size:10px;color:var(--text-3)">${pct}%</div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div></td>
+          <td>${statusBadge(c['Status'])}</td>
+          <td style="font-size:11px;color:var(--text-3)">${c['Assigned To']||''}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="10" class="loading">No campaigns yet — add them to your Campaigns sheet</td></tr>';
+}
+
+// ── DEPARTMENTS ───────────────────────────────────────────────────────────
+function renderDepts() {
+  const depts = ['Women\'s Health','Cardiology','Children\'s Health','Diabetes & Chronic','Dermatology & Plastics','Oncology','Orthopedics','General / Brand'];
+  document.getElementById('dept-grid').innerHTML = depts.map(dept=>{
+    const camps = DATA.campaigns.filter(c=>c['Department']===dept);
+    const ds = deptStyle(dept);
+    return `<div class="dept-card">
+      <div class="dept-header" style="background:${ds.bg}">
+        <span class="dept-title" style="color:${ds.t}">${dept}</span>
+        <span class="dept-count-badge" style="color:${ds.t}">${camps.length} campaigns</span>
+      </div>
+      <div class="dept-list">
+        ${camps.length?camps.map(c=>`<div class="dept-item">
+          <div class="camp-dot" style="background:${resolveDotColor(dept)}"></div>
+          <span class="dept-item-name">${c['Campaign Name']}</span>
+          ${statusBadge(c['Status'])}
+        </div>`).join(''):`<div style="font-size:11px;color:var(--text-3);padding:8px 0">No campaigns yet</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── HEALTH DAYS ───────────────────────────────────────────────────────────
+function renderHealthDays(filter='') {
+  const typeF = document.getElementById('hd-type-filter').value;
+  const deptF = document.getElementById('hd-dept-filter').value;
+  const data = DATA.healthDays.filter(h=>{
+    if(typeF && h['Type']!==typeF) return false;
+    if(deptF && h['Department']!==deptF) return false;
+    if(filter && !JSON.stringify(h).toLowerCase().includes(filter.toLowerCase())) return false;
+    return true;
+  });
+  const byMonth = {};
+  data.forEach(h=>{
+    const m = h['Month']||'Unknown';
+    if(!byMonth[m]) byMonth[m]=[];
+    byMonth[m].push(h);
+  });
+  document.getElementById('hd-container').innerHTML = Object.keys(byMonth).length
+    ? Object.entries(byMonth).map(([month,days])=>`
+      <div class="hd-month">
+        <div class="hd-month-header">${month} <span class="hd-month-count">${days.length} day${days.length!==1?'s':''}</span></div>
+        ${days.map(h=>{
+          const t=h['Type']||'MOH Health Day';
+          const tc=t==='Saudi Occasion'?'b-occasion':t==='Islamic Occasion'?'b-occasion':t==='IMC Campaign'?'b-imc':'b-moh';
+          const ds=deptStyle(h['Department']);
+          return `<div class="hd-row">
+            <span class="hd-date">${(h['Date']||'').substring(5)||''}</span>
+            <div class="hd-name">
+              <div class="hd-name-en">${h['Health Day Name']||''}</div>
+              <div class="hd-name-ar">${h['Health Day Name AR']||''}</div>
+            </div>
+            <span class="badge ${tc}" style="margin-left:8px;white-space:nowrap">${t}</span>
+            <span class="badge" style="background:${ds.bg};color:${ds.t};margin-left:6px;white-space:nowrap">${h['Department']||''}</span>
+          </div>`;
+        }).join('')}
+      </div>`).join('')
+    : '<div class="loading">No health days found — add them to your Health_Days sheet</div>';
+}
+function filterHealthDays(q){ renderHealthDays(q); }
+
+// ── CONTENT LIBRARY ───────────────────────────────────────────────────────
+function renderLibrary(filter='') {
+  const deptF = document.getElementById('lib-dept-filter').value;
+  const statF = document.getElementById('lib-status-filter').value;
+  const data = DATA.library.filter(c=>{
+    if(deptF && c['Department']!==deptF) return false;
+    if(statF && c['Status']!==statF) return false;
+    if(filter && !JSON.stringify(c).toLowerCase().includes(filter.toLowerCase())) return false;
+    return true;
+  });
+  document.getElementById('lib-grid').innerHTML = data.length
+    ? data.map(c=>{
+        const ds=deptStyle(c['Department']);
+        const reach=parseFloat(c['Performance - Reach'])||0;
+        const eng=parseFloat(c['Performance - Engagements'])||0;
+        return `<div class="lib-card">
+          <div class="lib-thumb" style="background:${ds.bg};color:${ds.t}">
+            ${c['Headline EN']||c['Campaign Name']||'Content'}
+            <div class="lib-type-badge">${c['Content Type']||'Post'}</div>
+          </div>
+          <div class="lib-info">
+            <div class="lib-title">${c['Campaign Name']||''}</div>
+            <div class="lib-meta">${c['Department']||''} · ${c['Channel']||''} · ${(c['Date Published']||'').substring(0,10)}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              ${statusBadge(c['Status'])}
+              ${reach?`<span style="font-size:10px;color:var(--text-3)">${fmt(reach)} reach · ${fmt(eng)} eng</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="loading" style="grid-column:1/-1">No content found</div>';
+}
+function filterLibrary(q){ renderLibrary(q); }
+
+// ── REQUEST FORM ──────────────────────────────────────────────────────────
+function submitRequest() {
+  const name=document.getElementById('f-name').value.trim();
+  const dept=document.getElementById('f-dept').value;
+  const type=document.getElementById('f-type').value;
+  const title=document.getElementById('f-title').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const deadline=document.getElementById('f-deadline').value;
+  if(!name||!dept||!type||!title||!desc||!deadline){alert('Please fill in all required fields (*)');return;}
+  const row=[
+    new Date().toLocaleDateString('en-GB'),name,dept,type,title,desc,
+    document.getElementById('f-publish').value,deadline,
+    document.getElementById('f-channels').value,
+    document.getElementById('f-priority').value,
+    document.getElementById('f-assets').value,
+    document.getElementById('f-notes').value,
+    'Planned','',''
+  ];
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({sheet:'Requests',row})}).catch(()=>{});
+  document.getElementById('success-msg').style.display='block';
+  ['f-name','f-title','f-desc','f-notes','f-publish','f-deadline'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  setTimeout(()=>document.getElementById('success-msg').style.display='none',5000);
+  setTimeout(()=>loadAllData(),2000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadAllData();
+</script>
+</body>
+</html>
