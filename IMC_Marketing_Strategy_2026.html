@@ -145,18 +145,12 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--bg
 .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:var(--navy)}
 .cal-wd{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.65);text-align:center;padding:9px 4px;text-transform:uppercase;letter-spacing:0.08em}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
-.cal-cell{min-height:92px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:7px;background:var(--surface);overflow:visible;position:relative;z-index:0}.cal-cell:hover{z-index:10}
+.cal-cell{min-height:92px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:7px;background:var(--surface)}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-cell.other-month{background:var(--bg);opacity:0.45}
 .cal-cell.today .cal-day-num{background:var(--navy);color:#fff;border-radius:50%}
 .cal-day-num{font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
-.cal-ev{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;cursor:pointer;position:relative;transition:opacity var(--transition)}
-.cal-ev:hover{opacity:0.85}
-.cal-ev-tooltip{display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#1A1D23;color:#fff;font-size:11px;padding:7px 10px;border-radius:6px;white-space:nowrap;z-index:200;pointer-events:auto;font-weight:400;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08)}
-.cal-ev-tooltip::after{content:'';position:absolute;top:100%;left:10px;border:5px solid transparent;border-top-color:#1A1D23}
-.cal-ev:hover .cal-ev-tooltip{display:block}
-.cal-ev-link{color:var(--gold);text-decoration:underline;pointer-events:auto}
-.cal-ev-link:hover{color:#fff}
+.cal-ev{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;cursor:default}
 .ev-w{background:var(--dept-women);color:var(--dept-women-t)}
 .ev-c{background:var(--dept-cardio);color:var(--dept-cardio-t)}
 .ev-k{background:var(--dept-children);color:var(--dept-children-t)}
@@ -527,11 +521,30 @@ a.post-link:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
           <select class="cal-select" id="lib-type-filter" onchange="filterLibrary('')">
             <option value="">All Types</option><option>Post</option><option>Reel</option><option>Video</option><option>Story</option><option>Carousel</option>
           </select>
+          <select class="cal-select" id="lib-channel-filter" onchange="filterLibrary('')">
+            <option value="">All Channels</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>LinkedIn</option><option>X</option>
+          </select>
           <select class="cal-select" id="lib-status-filter" onchange="filterLibrary('')">
             <option value="">All Status</option><option>Published</option><option>Ready</option><option>In Production</option><option>Planned</option>
           </select>
         </div>
-        <div class="lib-grid" id="lib-grid"><div class="loading">Loading content library...</div></div>
+        <div class="scrollable-x">
+          <table class="camp-table" id="lib-table">
+            <thead><tr>
+              <th>#</th>
+              <th>Title / Campaign</th>
+              <th>Department</th>
+              <th>Channel</th>
+              <th>Type</th>
+              <th>Date Published</th>
+              <th>Reach</th>
+              <th>Engagements</th>
+              <th>Status</th>
+              <th>Post Link</th>
+            </tr></thead>
+            <tbody id="lib-tbody"><tr><td colspan="10" class="loading">Loading content library...</td></tr></tbody>
+          </table>
+        </div>
       </div>
 
     </div><!-- /content-area -->
@@ -551,11 +564,7 @@ a.post-link:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
   <div class="dp-body" id="dp-body"></div>
 </div>
 
-<!-- ── CONTENT VIEWER MODAL ── -->
-<div class="lib-view-modal" id="lib-modal" onclick="closeLibModal(event)">
-  <button class="lib-view-close" onclick="closeLibModal()">✕</button>
-  <div class="lib-view-inner" id="lib-modal-inner"></div>
-</div>
+
 
 <script>
 // ── CONFIGURATION ────────────────────────────────────────────────────────
@@ -889,14 +898,7 @@ function renderCalendar() {
     });
     html+=`<div class="cal-cell${isToday?' today':''}">
       <div class="cal-day-num">${d}</div>
-      ${events.slice(0,3).map(e=>{
-        const postLink = (e['Post Link']||'').trim();
-        const isFuture = !isPast(dateStr);
-        const tooltip = postLink && !isFuture
-          ? `<div class="cal-ev-tooltip">🔗 <a class="cal-ev-link" href="${postLink}" target="_blank" rel="noopener">View post</a></div>`
-          : (postLink && isFuture ? '' : '');
-        return `<div class="cal-ev ${deptClass(e['Department'])}" style="position:relative">${e['Campaign Name']||e['Health Day Name']||''}${tooltip}</div>`;
-      }).join('')}
+      ${events.slice(0,3).map(e=>`<div class="cal-ev ${deptClass(e['Department'])}" title="${e['Campaign Name']||e['Health Day Name']||''}">${e['Campaign Name']||e['Health Day Name']||''}</div>`).join('')}
       ${events.length>3?`<div style="font-size:9px;color:var(--text-3);padding:1px 4px">+${events.length-3} more</div>`:''}
     </div>`;
   }
@@ -1155,103 +1157,43 @@ function filterHealthDays(q){ renderHealthDays(q); }
 
 // ── CONTENT LIBRARY ───────────────────────────────────────────────────────
 function renderLibrary(filter='') {
-  const deptF  = document.getElementById('lib-dept-filter').value;
-  const typeF  = document.getElementById('lib-type-filter').value;
-  const statF  = document.getElementById('lib-status-filter').value;
+  const deptF    = document.getElementById('lib-dept-filter').value;
+  const typeF    = document.getElementById('lib-type-filter').value;
+  const chanF    = document.getElementById('lib-channel-filter').value;
+  const statF    = document.getElementById('lib-status-filter').value;
+  const q        = filter || '';
   const data = DATA.library.filter(c=>{
     if(deptF && c['Department']!==deptF) return false;
     if(typeF && (c['Content Type']||'')!==typeF) return false;
+    if(chanF && (c['Channel']||'')!==chanF) return false;
     if(statF && c['Status']!==statF) return false;
-    if(filter && !JSON.stringify(c).toLowerCase().includes(filter.toLowerCase())) return false;
+    if(q && !JSON.stringify(c).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
-  document.getElementById('lib-grid').innerHTML = data.length
-    ? data.map(c=>{
-        const ds  = deptStyle(c['Department']);
-        const reach = parseFloat(c['Performance - Reach'])||0;
-        const eng   = parseFloat(c['Performance - Engagements'])||0;
-        const postUrl = c['Post Link']||c['Social Link']||'';
-        const imgUrl  = c['Image URL']||c['Thumbnail']||'';
-        const embedUrl= c['Embed URL']||'';
-        const isVideo = (c['Content Type']||'').toLowerCase().includes('video')||(c['Content Type']||'').toLowerCase().includes('reel');
-        const isPubl  = c['Status']==='Published';
-        let mediaHtml='';
-        if(embedUrl && isPubl){
-          mediaHtml=`<iframe class="lib-media-embed" src="${embedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>`;
-        } else if(imgUrl){
-          mediaHtml=`<img src="${imgUrl}" alt="${c['Campaign Name']||''}" onerror="this.style.display='none'">`;
-        } else {
-          mediaHtml=`<div class="lib-media-placeholder">${isVideo?'🎬':'🖼️'}</div>`;
-        }
-        return `<div class="lib-card">
-          <div class="lib-media" style="${!imgUrl&&!embedUrl?'background:'+ds.bg:''}">
-            ${mediaHtml}
-            <div class="lib-media-overlay"></div>
-            <div class="lib-platform-badge">${c['Channel']||'Instagram'}</div>
-            ${isVideo&&!embedUrl?`<div class="lib-play-btn">▶</div>`:''}
-          </div>
-          <div class="lib-info">
-            <div class="lib-title">${c['Campaign Name']||''}</div>
-            <div class="lib-meta">
-              <span>${c['Department']||''}</span>
-              <span class="lib-meta-sep">·</span>
-              <span>${c['Content Type']||'Post'}</span>
-              <span class="lib-meta-sep">·</span>
-              <span>${(c['Date Published']||'').substring(0,10)||'—'}</span>
-              ${statusBadge(c['Status'])}
-            </div>
-            ${(reach||eng)?`<div class="lib-perf">
-              ${reach?`<span><strong>${fmt(reach)}</strong> reach</span>`:''}
-              ${eng?`<span><strong>${fmt(eng)}</strong> eng</span>`:''}
-            </div>`:''}
-            <div class="lib-actions">
-              ${postUrl?`<a class="lib-btn" href="${postUrl}" target="_blank" rel="noopener">🔗 View Post</a>`:''}
-              ${c['Headline EN']?`<button class="lib-btn" onclick="openLibModal(${c['id']||0},event)">🔍 Preview</button>`:''}
-            </div>
-          </div>
-        </div>`;
+  document.getElementById('lib-tbody').innerHTML = data.length
+    ? data.map((c, i)=>{
+        const ds      = deptStyle(c['Department']);
+        const reach   = parseFloat(c['Performance - Reach'])||0;
+        const eng     = parseFloat(c['Performance - Engagements'])||0;
+        const postUrl = (c['Post Link']||c['Social Link']||'').trim();
+        const title   = c['Campaign Name']||c['Headline EN']||'—';
+        const date    = (c['Date Published']||'').substring(0,10)||'—';
+        return `<tr>
+          <td style="color:var(--text-3);font-size:11px">${i+1}</td>
+          <td style="font-weight:600;max-width:220px">${title}</td>
+          <td><span class="badge" style="background:${ds.bg};color:${ds.t}">${c['Department']||'—'}</span></td>
+          <td style="font-size:11px;color:var(--text-2)">${c['Channel']||'—'}</td>
+          <td style="font-size:11px;color:var(--text-2)">${c['Content Type']||'—'}</td>
+          <td style="font-size:11px;color:var(--text-3);white-space:nowrap">${date}</td>
+          <td style="font-weight:600">${reach?fmt(reach):'—'}</td>
+          <td style="font-weight:600">${eng?fmt(eng):'—'}</td>
+          <td>${statusBadge(c['Status'])}</td>
+          <td>${postUrl?`<a class="post-link" href="${postUrl}" target="_blank" rel="noopener">🔗 View Post</a>`:'—'}</td>
+        </tr>`;
       }).join('')
-    : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🖼️</div>No content found — add items to your Content_Library sheet</div>';
+    : '<tr><td colspan="10" class="empty-state">No content found</td></tr>';
 }
 function filterLibrary(q){ renderLibrary(q); }
-
-// ── LIBRARY MODAL ────────────────────────────────────────────────────────
-function openLibModal(id, e) {
-  if(e) e.stopPropagation();
-  const c = DATA.library[id];
-  if(!c) return;
-  const postUrl=c['Post Link']||c['Social Link']||'';
-  const imgUrl=c['Image URL']||c['Thumbnail']||'';
-  const embedUrl=c['Embed URL']||'';
-  const ds=deptStyle(c['Department']);
-  document.getElementById('lib-modal-inner').innerHTML=`
-    <div style="margin-bottom:14px">
-      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">${c['Campaign Name']||''}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <span class="badge" style="background:${ds.bg};color:${ds.t}">${c['Department']||''}</span>
-        ${statusBadge(c['Status'])}
-        <span class="badge b-planned">${c['Content Type']||'Post'}</span>
-      </div>
-    </div>
-    ${embedUrl?`<div style="margin-bottom:14px"><iframe width="100%" height="400" src="${embedUrl}" frameborder="0" allowfullscreen></iframe></div>`:''}
-    ${imgUrl&&!embedUrl?`<div style="margin-bottom:14px"><img src="${imgUrl}" style="max-width:100%;border-radius:8px" alt="${c['Campaign Name']||''}"></div>`:''}
-    ${c['Headline EN']?`<div style="margin-bottom:10px"><strong style="font-size:13px">${c['Headline EN']}</strong></div>`:''}
-    ${c['Headline AR']?`<div style="margin-bottom:10px;font-family:'IBM Plex Sans Arabic';font-size:13px;direction:rtl;text-align:right">${c['Headline AR']}</div>`:''}
-    ${c['Caption']?`<div style="font-size:12px;color:var(--text-2);line-height:1.6;margin-bottom:10px">${c['Caption']}</div>`:''}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-      ${postUrl?`<a class="lib-btn" href="${postUrl}" target="_blank">🔗 View Live Post</a>`:''}
-    </div>
-  `;
-  document.getElementById('lib-modal').classList.add('open');
-}
-function closeLibModal(e) {
-  if(e&&e.target!==document.getElementById('lib-modal')&&!e.target.classList.contains('lib-view-close')) return;
-  if(e&&e.target===document.getElementById('lib-modal-inner')) return;
-  document.getElementById('lib-modal').classList.remove('open');
-}
-document.getElementById('lib-modal').addEventListener('click', function(e){
-  if(e.target===this) this.classList.remove('open');
-});
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 initDates();
