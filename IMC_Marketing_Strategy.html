@@ -650,16 +650,16 @@ async function fetchSheet(sheetName) {
 // ── LOAD ALL ─────────────────────────────────────────────────────────────
 async function loadAllData() {
   document.getElementById('sync-time').textContent = 'syncing...';
-  const [metrics, campaigns, requests, healthDays, library, calendar, events] = await Promise.all([
+  const [metrics, campaigns, requests, healthDays, library, events] = await Promise.all([
     fetchSheet('Dashboard_Metrics'),
     fetchSheet('Campaigns'),
     fetchSheet('Requests'),
     fetchSheet('Health_Days'),
     fetchSheet('Content_Library'),
-    fetchSheet('Calendar'),
     fetchSheet('Events'),
   ]);
-  DATA = {metrics, campaigns, requests, healthDays, library, calendar, events};
+  // Content_Library is the single source for both SM Calendar and Content Library views
+  DATA = {metrics, campaigns, requests, healthDays, library, events};
   document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   renderDashboard();
   renderCalendar();
@@ -879,27 +879,45 @@ function renderCalendar() {
   const first   = new Date(y,m,1);
   const last    = new Date(y,m+1,0);
   const today   = new Date();
-  const allEvents = [...DATA.calendar, ...DATA.healthDays.map(h=>({
-    'Date':h['Date'],'Campaign Name':h['Health Day Name'],'Department':h['Department'],
-    'Channel':'Instagram','Status':h['Status']||'Planned','Post Link':''
-  }))];
+
+  // Single source: Content_Library rows, mapped to calendar events
+  // Also overlay Health Days as context markers
+  const contentItems = DATA.library.map(c=>({
+    date: (c['Date Published']||'').substring(0,10),
+    name: c['Campaign Name']||c['Headline EN']||'',
+    dept: c['Department']||'',
+    entity: c['Entity']||'',
+    channel: c['Channel']||'',
+    status: c['Status']||'',
+    isHealthDay: false,
+  }));
+  const healthItems = DATA.healthDays.map(h=>({
+    date: (h['Date']||'').substring(0,10),
+    name: h['Health Day Name']||'',
+    dept: h['Department']||'',
+    entity: '',
+    channel: '',
+    status: h['Status']||'',
+    isHealthDay: true,
+  }));
+  const allItems = [...contentItems, ...healthItems];
+
   let html='';
   for(let i=0;i<first.getDay();i++) html+=`<div class="cal-cell other-month"></div>`;
   for(let d=1;d<=last.getDate();d++){
     const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
-    const events=allEvents.filter(e=>{
-      const ed=(e['Date']||'').substring(0,10);
-      if(ed!==dateStr) return false;
-      if(deptF&&e['Department']!==deptF) return false;
-      if(entityF&&!(e['Entity']||'').includes(entityF)) return false;
-      if(chanF&&!((e['Channel']||'').includes(chanF))) return false;
+    const items=allItems.filter(e=>{
+      if(e.date!==dateStr) return false;
+      if(deptF && e.dept!==deptF) return false;
+      if(entityF && !e.entity.includes(entityF)) return false;
+      if(chanF && !e.channel.includes(chanF)) return false;
       return true;
     });
     html+=`<div class="cal-cell${isToday?' today':''}">
       <div class="cal-day-num">${d}</div>
-      ${events.slice(0,3).map(e=>`<div class="cal-ev ${deptClass(e['Department'])}" title="${e['Campaign Name']||e['Health Day Name']||''}">${e['Campaign Name']||e['Health Day Name']||''}</div>`).join('')}
-      ${events.length>3?`<div style="font-size:9px;color:var(--text-3);padding:1px 4px">+${events.length-3} more</div>`:''}
+      ${items.slice(0,3).map(e=>`<div class="cal-ev ${e.isHealthDay?'ev-o':deptClass(e.dept)}" title="${e.name}">${e.name}</div>`).join('')}
+      ${items.length>3?`<div style="font-size:9px;color:var(--text-3);padding:1px 4px">+${items.length-3} more</div>`:''}
     </div>`;
   }
   const rem=7-((first.getDay()+last.getDate())%7);
